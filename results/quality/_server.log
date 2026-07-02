@@ -1,0 +1,16 @@
+0.02.063.903 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.02.160.748 I srv    load_model: loading model 'Youssofal/Qwen3.6-27B-Abliterated-Heretic-Uncensored-GGUF:Q3_K_M'
+0.02.491.363 W common_fit_params: failed to fit params to free device memory: n_gpu_layers already set by user to 99, abort
+0.23.105.076 W load_hparams: Qwen-VL models require at minimum 1024 image tokens to function correctly on grounding tasks
+0.23.105.079 W load_hparams: if you encounter problems with accuracy, try adding --image-min-tokens 1024
+0.23.105.079 W load_hparams: more info: https://github.com/ggml-org/llama.cpp/issues/16842
+
+0.23.339.337 I srv    load_model: loaded multimodal model, '/root/.cache/huggingface/hub/models--Youssofal--Qwen3.6-27B-Abliterated-Heretic-Uncensored-GGUF/snapshots/46ddceb5e07b997b47bbd27fa03d23ab32a9727b/mmproj-BF16.gguf'
+0.23.375.110 I srv    load_model: initializing, n_slots = 4, n_ctx_slot = 8192, kv_unified = 'true'
+0.23.388.950 I srv          init: chat template supports preserving reasoning, consider enabling it via --reasoning-preserve
+0.23.388.975 I srv  llama_server: model loaded
+0.23.388.978 I srv  llama_server: listening on http://127.0.0.1:8080
+0.24.001.947 W srv    operator(): got exception: {"error":{"code":500,"message":"[json.exception.parse_error.101] parse error at line 1, column 1: attempting to parse an empty input; check that your input string or stream contains the expected JSON","type":"server_error"}}
+0.24.011.831 W srv    operator(): got exception: {"error":{"code":500,"message":"[json.exception.parse_error.101] parse error at line 1, column 1: attempting to parse an empty input; check that your input string or stream contains the expected JSON","type":"server_error"}}
+0.24.020.752 W srv    operator(): got exception: {"error":{"code":500,"message":"[json.exception.parse_error.101] parse error at line 1, column 1: attempting to parse an empty input; check that your input string or stream contains the expected JSON","type":"server_error"}}
+0.24.023.998 I srv    operator(): operator(): cleaning up before exit...
