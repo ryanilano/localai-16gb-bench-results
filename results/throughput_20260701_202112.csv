@@ -29,17 +29,3 @@ label,quant,type,depth,pp_tok_s,tg_tok_s,vram_peak_mib,ram_used_peak_mib,status
 27B_Heretic_Youssofal_Q3_K_M,Q3_K_M,dense,8192,1210.347682,28.898399,13390,965,OK
 27B_Heretic_Youssofal_Q3_K_M,Q3_K_M,dense,16384,1084.263186,27.445490,13636,1247,OK
 27B_Heretic_Youssofal_Q3_K_M,Q3_K_M,dense,32768,883.923589,24.950253,14220,1813,OK
-# --- provenance (appended 2026-07-02; this run predates the version-stamping feature) ---
-# host: debian-llm (Proxmox LXC)
-# cpu: AMD Ryzen 7 7800X3D 8-Core Processor
-# gpu: NVIDIA GeForce RTX 4070 Ti SUPER
-# gpu_compute_capability: 8.9
-# gpu_vram_total_mib: 15943
-# backend: CUDA
-# cuda_toolkit: 13.1 (operator-confirmed; not auto-recorded by this run)
-# llama_cpp_build: 4fc4ec554 (build 9859)
-# nvidia_driver: not recorded at run time
-# power_limit_w: not recorded at run time
-# note: cpu/gpu/vram/backend/build are ground truth from this run's llama-bench JSON
-#       (json/*.json). cuda_toolkit is operator-attested. driver/power were not captured;
-#       future runs record all fields automatically in versions_<slug>.txt + RUN_<slug>.md.
