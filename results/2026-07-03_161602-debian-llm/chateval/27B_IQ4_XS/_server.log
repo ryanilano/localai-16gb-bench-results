@@ -1,0 +1,92 @@
+0.02.074.804 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.02.154.269 I srv    load_model: loading model 'unsloth/Qwen3.6-27B-GGUF:IQ4_XS'
+0.02.449.148 W common_fit_params: failed to fit params to free device memory: n_gpu_layers already set by user to 99, abort
+0.27.045.227 I srv    load_model: initializing, n_slots = 4, n_ctx_slot = 8192, kv_unified = 'true'
+0.27.059.270 I srv          init: chat template supports preserving reasoning, consider enabling it via --reasoning-preserve
+0.27.059.307 I srv  llama_server: model loaded
+0.27.059.310 I srv  llama_server: listening on http://127.0.0.1:8080
+0.28.128.393 I slot get_availabl: id  3 | task -1 | selected slot by LRU, t_last = -1
+0.28.128.455 I slot launch_slot_: id  3 | task 0 | processing task, is_child = 0
+0.31.409.097 I slot print_timing: id  3 | task 0 | n_decoded =    111, tg =  36.68 t/s, tg_3s =  36.68 t/s
+0.34.428.833 I slot print_timing: id  3 | task 0 | n_decoded =    219, tg =  36.22 t/s, tg_3s =  35.76 t/s
+0.37.452.859 I slot print_timing: id  3 | task 0 | n_decoded =    329, tg =  36.27 t/s, tg_3s =  36.38 t/s
+0.40.475.267 I slot print_timing: id  3 | task 0 | n_decoded =    439, tg =  36.30 t/s, tg_3s =  36.39 t/s
+0.43.479.616 I slot print_timing: id  3 | task 0 | n_decoded =    548, tg =  36.30 t/s, tg_3s =  36.28 t/s
+0.46.480.175 I slot print_timing: id  3 | task 0 | n_decoded =    657, tg =  36.30 t/s, tg_3s =  36.33 t/s
+0.49.486.080 I slot print_timing: id  3 | task 0 | n_decoded =    766, tg =  36.30 t/s, tg_3s =  36.26 t/s
+0.52.488.351 I slot print_timing: id  3 | task 0 | n_decoded =    875, tg =  36.30 t/s, tg_3s =  36.31 t/s
+0.55.495.684 I slot print_timing: id  3 | task 0 | n_decoded =    984, tg =  36.29 t/s, tg_3s =  36.24 t/s
+0.56.597.997 I slot print_timing: id  3 | task 0 | prompt eval time =     254.60 ms /    62 tokens (    4.11 ms per token,   243.52 tokens per second)
+0.56.597.999 I slot print_timing: id  3 | task 0 |        eval time =   28214.91 ms /  1024 tokens (   27.55 ms per token,    36.29 tokens per second)
+0.56.598.000 I slot print_timing: id  3 | task 0 |       total time =   28469.51 ms /  1086 tokens
+0.56.598.003 I slot print_timing: id  3 | task 0 |    graphs reused =       1019
+0.56.598.029 I slot      release: id  3 | task 0 | stop processing: n_tokens = 1085, truncated = 0
+0.56.612.030 I slot get_availabl: id  3 | task -1 | selected slot by LCP similarity, sim_best = 0.706 (> 0.100 thold), f_keep = 0.055
+0.56.749.705 I slot launch_slot_: id  3 | task 1027 | processing task, is_child = 0
+0.59.915.201 I slot print_timing: id  3 | task 1027 | n_decoded =    110, tg =  36.66 t/s, tg_3s =  36.66 t/s
+1.02.918.353 I slot print_timing: id  3 | task 1027 | n_decoded =    219, tg =  36.48 t/s, tg_3s =  36.30 t/s
+1.05.943.805 I slot print_timing: id  3 | task 1027 | n_decoded =    329, tg =  36.44 t/s, tg_3s =  36.36 t/s
+1.08.946.921 I slot print_timing: id  3 | task 1027 | n_decoded =    438, tg =  36.40 t/s, tg_3s =  36.30 t/s
+1.11.949.441 I slot print_timing: id  3 | task 1027 | n_decoded =    547, tg =  36.38 t/s, tg_3s =  36.30 t/s
+1.14.952.942 I slot print_timing: id  3 | task 1027 | n_decoded =    656, tg =  36.37 t/s, tg_3s =  36.29 t/s
+1.17.962.118 I slot print_timing: id  3 | task 1027 | n_decoded =    765, tg =  36.35 t/s, tg_3s =  36.22 t/s
+1.20.966.959 I slot print_timing: id  3 | task 1027 | n_decoded =    874, tg =  36.34 t/s, tg_3s =  36.27 t/s
+1.23.976.526 I slot print_timing: id  3 | task 1027 | n_decoded =    983, tg =  36.32 t/s, tg_3s =  36.22 t/s
+1.25.107.381 I slot print_timing: id  3 | task 1027 | prompt eval time =     165.09 ms /    64 tokens (    2.58 ms per token,   387.67 tokens per second)
+1.25.107.384 I slot print_timing: id  3 | task 1027 |        eval time =   28192.56 ms /  1024 tokens (   27.53 ms per token,    36.32 tokens per second)
+1.25.107.384 I slot print_timing: id  3 | task 1027 |       total time =   28357.65 ms /  1088 tokens
+1.25.107.385 I slot print_timing: id  3 | task 1027 |    graphs reused =       2037
+1.25.107.399 I slot      release: id  3 | task 1027 | stop processing: n_tokens = 1108, truncated = 0
+1.25.121.779 I slot get_availabl: id  3 | task -1 | selected slot by LCP similarity, sim_best = 0.709 (> 0.100 thold), f_keep = 0.075
+1.25.305.414 I slot launch_slot_: id  3 | task 2054 | processing task, is_child = 0
+1.28.472.833 I slot print_timing: id  3 | task 2054 | n_decoded =    110, tg =  36.64 t/s, tg_3s =  36.64 t/s
+1.31.477.843 I slot print_timing: id  3 | task 2054 | n_decoded =    219, tg =  36.45 t/s, tg_3s =  36.27 t/s
+1.32.165.722 I slot print_timing: id  3 | task 2054 | prompt eval time =     164.97 ms /    55 tokens (    3.00 ms per token,   333.40 tokens per second)
+1.32.165.725 I slot print_timing: id  3 | task 2054 |        eval time =    6695.32 ms /   244 tokens (   27.44 ms per token,    36.44 tokens per second)
+1.32.165.725 I slot print_timing: id  3 | task 2054 |       total time =    6860.28 ms /   299 tokens
+1.32.165.726 I slot print_timing: id  3 | task 2054 |    graphs reused =       2278
+1.32.165.740 I slot      release: id  3 | task 2054 | stop processing: n_tokens = 360, truncated = 0
+1.32.180.919 I slot get_availabl: id  3 | task -1 | selected slot by LCP similarity, sim_best = 0.685 (> 0.100 thold), f_keep = 0.319
+1.32.767.772 I slot launch_slot_: id  3 | task 2301 | processing task, is_child = 0
+1.35.954.928 I slot print_timing: id  3 | task 2301 | n_decoded =    110, tg =  36.55 t/s, tg_3s =  36.55 t/s
+1.38.982.292 I slot print_timing: id  3 | task 2301 | n_decoded =    220, tg =  36.44 t/s, tg_3s =  36.34 t/s
+1.42.009.324 I slot print_timing: id  3 | task 2301 | n_decoded =    330, tg =  36.41 t/s, tg_3s =  36.34 t/s
+1.45.018.206 I slot print_timing: id  3 | task 2301 | n_decoded =    439, tg =  36.36 t/s, tg_3s =  36.23 t/s
+1.48.022.925 I slot print_timing: id  3 | task 2301 | n_decoded =    548, tg =  36.34 t/s, tg_3s =  36.28 t/s
+1.51.033.023 I slot print_timing: id  3 | task 2301 | n_decoded =    657, tg =  36.32 t/s, tg_3s =  36.21 t/s
+1.54.039.820 I slot print_timing: id  3 | task 2301 | n_decoded =    766, tg =  36.31 t/s, tg_3s =  36.25 t/s
+1.57.050.925 I slot print_timing: id  3 | task 2301 | n_decoded =    875, tg =  36.30 t/s, tg_3s =  36.20 t/s
+2.00.058.674 I slot print_timing: id  3 | task 2301 | n_decoded =    984, tg =  36.29 t/s, tg_3s =  36.24 t/s
+2.01.162.613 I slot print_timing: id  3 | task 2301 | prompt eval time =     177.24 ms /    83 tokens (    2.14 ms per token,   468.28 tokens per second)
+2.01.162.616 I slot print_timing: id  3 | task 2301 |        eval time =   28217.57 ms /  1024 tokens (   27.56 ms per token,    36.29 tokens per second)
+2.01.162.617 I slot print_timing: id  3 | task 2301 |       total time =   28394.82 ms /  1107 tokens
+2.01.162.617 I slot print_timing: id  3 | task 2301 |    graphs reused =       3296
+2.01.162.634 I slot      release: id  3 | task 2301 | stop processing: n_tokens = 1191, truncated = 0
+2.01.177.160 I slot get_availabl: id  3 | task -1 | selected slot by LCP similarity, sim_best = 0.838 (> 0.100 thold), f_keep = 0.139
+2.01.480.474 I slot launch_slot_: id  3 | task 3328 | processing task, is_child = 0
+2.04.660.412 I slot print_timing: id  3 | task 3328 | n_decoded =    110, tg =  36.53 t/s, tg_3s =  36.53 t/s
+2.07.661.140 I slot print_timing: id  3 | task 3328 | n_decoded =    219, tg =  36.43 t/s, tg_3s =  36.32 t/s
+2.10.667.450 I slot print_timing: id  3 | task 3328 | n_decoded =    328, tg =  36.37 t/s, tg_3s =  36.26 t/s
+2.13.672.968 I slot print_timing: id  3 | task 3328 | n_decoded =    437, tg =  36.34 t/s, tg_3s =  36.27 t/s
+2.16.596.052 I slot print_timing: id  3 | task 3328 | prompt eval time =     168.46 ms /    67 tokens (    2.51 ms per token,   397.72 tokens per second)
+2.16.596.055 I slot print_timing: id  3 | task 3328 |        eval time =   14947.09 ms /   543 tokens (   27.53 ms per token,    36.33 tokens per second)
+2.16.596.056 I slot print_timing: id  3 | task 3328 |       total time =   15115.55 ms /   610 tokens
+2.16.596.056 I slot print_timing: id  3 | task 3328 |    graphs reused =       3835
+2.16.596.075 I slot      release: id  3 | task 3328 | stop processing: n_tokens = 740, truncated = 0
+2.16.612.007 I slot get_availabl: id  3 | task -1 | selected slot by LCP similarity, sim_best = 0.626 (> 0.100 thold), f_keep = 0.265
+2.16.959.499 I slot launch_slot_: id  3 | task 3874 | processing task, is_child = 0
+2.20.154.225 I slot print_timing: id  3 | task 3874 | n_decoded =    110, tg =  36.59 t/s, tg_3s =  36.59 t/s
+2.23.161.938 I slot print_timing: id  3 | task 3874 | n_decoded =    219, tg =  36.41 t/s, tg_3s =  36.24 t/s
+2.26.167.812 I slot print_timing: id  3 | task 3874 | n_decoded =    328, tg =  36.36 t/s, tg_3s =  36.26 t/s
+2.29.173.504 I slot print_timing: id  3 | task 3874 | n_decoded =    437, tg =  36.34 t/s, tg_3s =  36.26 t/s
+2.32.184.868 I slot print_timing: id  3 | task 3874 | n_decoded =    546, tg =  36.31 t/s, tg_3s =  36.20 t/s
+2.35.191.947 I slot print_timing: id  3 | task 3874 | n_decoded =    655, tg =  36.30 t/s, tg_3s =  36.25 t/s
+2.38.204.461 I slot print_timing: id  3 | task 3874 | n_decoded =    764, tg =  36.28 t/s, tg_3s =  36.18 t/s
+2.41.212.870 I slot print_timing: id  3 | task 3874 | n_decoded =    873, tg =  36.28 t/s, tg_3s =  36.23 t/s
+2.44.226.920 I slot print_timing: id  3 | task 3874 | n_decoded =    982, tg =  36.26 t/s, tg_3s =  36.16 t/s
+2.45.389.099 I slot print_timing: id  3 | task 3874 | prompt eval time =     188.03 ms /   145 tokens (    1.30 ms per token,   771.17 tokens per second)
+2.45.389.102 I slot print_timing: id  3 | task 3874 |        eval time =   28241.55 ms /  1024 tokens (   27.58 ms per token,    36.26 tokens per second)
+2.45.389.103 I slot print_timing: id  3 | task 3874 |       total time =   28429.58 ms /  1169 tokens
+2.45.389.103 I slot print_timing: id  3 | task 3874 |    graphs reused =       4853
+2.45.389.128 I slot      release: id  3 | task 3874 | stop processing: n_tokens = 1336, truncated = 0
+2.45.466.192 I srv    operator(): operator(): cleaning up before exit...

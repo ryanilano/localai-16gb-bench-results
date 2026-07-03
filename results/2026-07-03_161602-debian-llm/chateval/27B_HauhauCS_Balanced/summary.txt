@@ -1,0 +1,1 @@
+{"turns": 6, "coherence_pass": 1, "coherence_total": 1, "refused": 0, "refusal_total": 3, "think_chars": 18415, "req_ms_median": 27396}
