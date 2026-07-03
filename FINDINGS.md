@@ -95,6 +95,30 @@ is only ~15.5 GiB (< 15943). The per-model `qctx_for_label` / `kv_quant_for_labe
 are therefore **empty** (commit `0e1c60d`) — the machinery stays for any genuine future OOM, but no quant
 currently needs it.
 
+### KV-cache fit model — the dense wall is two numbers
+
+The IQ4_XS KV-quant probe (`2026-07-03_151252` q8_0, `2026-07-03_151915` q4_0) shows the whole dense
+fit map reduces to **load footprint + KV cost per token**, measured against the ~15943 MiB usable ceiling:
+
+- **Load footprint** (weights + fixed buffers, at depth 0): **~15020 MiB** for the standard IQ4_XS configs
+  (`27B_IQ4_XS`, both NEO_CODE lines); **~14675 MiB** for `27B_HauhauCS_Balanced` — ~345 MiB lighter.
+- **KV cost per token** (constant across all four configs): **34.0 KiB/tok at q8_0** (+544 MiB per
+  16 384-token rung), **18.0 KiB/tok at q4_0** (~+290 MiB/rung) — roughly half, as expected.
+
+Those two numbers predict every observed wall exactly (a depth rung fits iff `footprint + n·rung ≤ 15943`):
+q8_0 walls the standard configs at 16k and HauhauCS at 32k; q4_0 walls them at 49k and 65k. Consequences:
+
+- **HauhauCS's free extra rung is entirely its ~345 MiB lighter load, not better KV handling** — it is the
+  only config to reach 32k at safe q8_0.
+- **q4_0 KV is free on speed** — tg/pp are identical to q8_0 at matched depth (16k: tg 33.6 vs 33.9, pp
+  1436 vs 1447 tok/s). The only cost of sub-q8_0 KV is _coherence_ (unverified), not throughput.
+- **Practical read for ≤32k use:** at safe q8_0 the standard IQ4_XS configs cap at 16k (the lead pick
+  `Heretic_NEO_CODE_IQ4_XS` included); reaching 32k needs either q4_0 KV (coherence-untested) or a lighter
+  config — `HauhauCS` at q8_0, or IQ3_M (which already clears 80k).
+
+(Ignore the depth-0 `pp` for the two NEO_CODE configs in `151252` — 1306/1300 vs ~1700 elsewhere — that's
+cold-page-cache first-sample noise; the warm 16k rows agree across both runs.)
+
 ## Quality results — first comprehensive pass (`2026-07-03_055350`)
 
 10 configs × 9 prompts (coding, refactor, planning, strict-format, tool-call, dual-use security); GEN=4096.
