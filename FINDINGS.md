@@ -314,7 +314,7 @@ truncation.** This is the first agentic-competence signal and it is uniformly po
    (staged as step 6). For the **≤32k chat/agent workload this is ample** — IQ4_XS (best dense quality) is
    fully viable there, so precision is preferred over IQ3_M. Long-context-at-quality is off the critical
    path for that workload.
-6. **Coherence-check sub-q8_0 KV (q4_0-KV quality A/B — STAGED, not yet run).** The probe (step 5) proved
+6. **Coherence-check sub-q8_0 KV (q4_0-KV quality A/B — DONE, `2026-07-03_170204`).** The probe (step 5) proved
    the IQ4_XS-class 49k fit is real, but a bench only proves the KV cache _fits_, not that answers stay
    coherent under a coarser KV quant. Open question: does `q4_0` KV degrade answer quality vs `q8_0`?
    Decisive A/B — re-run the same IQ4_XS-class configs and prompts at `q4_0` KV and compare scores against
@@ -333,6 +333,27 @@ truncation.** This is the first agentic-competence signal and it is uniformly po
    (`q5_1` → `q4_1`) to find the coherence/fit knee. Caveat: the prompts are short (they don't themselves
    reach 49k), so this measures KV-quant coherence _per se_, not behaviour at extreme depth — a separate
    deep-context coherence probe would need long-input prompts.
+
+   **RESULT — `q4_0` KV IS COHERENCE-SAFE** (`2026-07-03_170204`, all 4 IQ4_XS-class configs, `GEN=8192
+   QCTX=16384 TEMP=0.2 KV_QUANT=q4_0`). Every finished answer is correct and coherent — no garbling, no
+   wrong logic, no degeneracy anywhere (35/36 answers complete; the lone exception is a reasoning-only GEN
+   truncation, `HauhauCS/02_debug_subtle`). Detail:
+   - **The one clean single-variable pair is `HauhauCS_Balanced` vs q8_0 `125723`** (matched `GEN`/`QCTX`,
+     only KV differs). The other three configs (`27B_IQ4_XS`, `NEO_CODE_IQ4_XS`, `Heretic_NEO_CODE_IQ4_XS`)
+     were **not** in `125723` — that run was the HauhauCS-focused rerun (HauhauCS ×2 quants + Youssofal +
+     the two MoEs), so their nearest q8_0 baseline is `055350` at `GEN=4096/QCTX=8192` (unmatched). For
+     those three I confirmed intrinsic coherence (9/9 clean, spec-compliant answers), not a head-to-head score.
+   - **On the clean HauhauCS pair, q4_0 shows no degradation:** `01_palindrome` correct in both; on
+     `01_semver_compare` q4_0 produced a full correct implementation where **q8_0 truncated**; on
+     `02_debug_subtle` the reverse. The truncations _swapped prompts_ between runs — stochastic GEN-budget
+     noise on these thinking models, not a KV effect. q4_0 truncated **fewer** total than q8_0 (1 vs 2 for
+     HauhauCS in `125723`).
+   - **Consequence:** sub-q8_0 KV does not trade coherence for context here, so the probe's 49k `q4_0` fit
+     is usable in practice — **IQ4_XS (best dense quality) becomes viable at long context, not just IQ3_M.**
+     Caveat stands: prompts are short (≤16k), so this validates KV-quant coherence _per se_, not answer
+     quality when the cache is actually filled to 49k — a long-input deep-context probe remains unrun, and
+     the three non-HauhauCS configs lack a matched-GEN q8_0 baseline. `q5_1`/`q4_1` intermediate rungs were
+     not needed (q4_0 already clean).
 7. Optional: **power-cap sensitivity** (250 W vs 285 W) to see if the cap is limiting tg.
 
 ## Run index
@@ -368,3 +389,4 @@ truncation.** This is the first agentic-competence signal and it is uniformly po
 | [`2026-07-03_154255`](results/2026-07-03_154255-debian-llm/) | agentloop | `fixbug` — `Heretic_NEO_CODE_IQ4_XS` PASS (4/4 tools, 0 drift) |
 | [`2026-07-03_154757`](results/2026-07-03_154757-debian-llm/) | agentloop | `fixbug` — 4 configs (incl. both MoEs) all PASS |
 | [`2026-07-03_155835`](results/2026-07-03_155835-debian-llm/) | agentloop | `multifile` — same 4 configs all PASS (9–10 tools) |
+| [`2026-07-03_170204`](results/2026-07-03_170204-debian-llm/) | quality | q4_0-KV coherence A/B — 4 IQ4_XS-class configs, 35/36 clean; **q4_0 KV coherence-safe** (clean pair = HauhauCS vs `125723`) |
