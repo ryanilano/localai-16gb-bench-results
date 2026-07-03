@@ -310,10 +310,30 @@ truncation.** This is the first agentic-competence signal and it is uniformly po
    moved the OOM wall out ~2 depth rungs for every config — `27B_IQ4_XS` 16k→**49k**, `NEO_CODE_IQ4_XS`
    16k→**49k**, `Heretic_NEO_CODE_IQ4_XS` 16k→**49k**, `HauhauCS_Balanced` 32k→**65k**. So the ceiling is
    the KV buffer, not the ~15 GB weights (deepest OK rung ~15.8 GiB, near the 15943 ceiling). Bench proves
-   _fit_ not coherence, so a q4_0-KV quality pass would be needed before trusting sub-q8_0 KV at 49k+.
-   For the **≤32k chat/agent workload this is ample** — IQ4_XS (best dense quality) is fully viable there,
-   so precision is preferred over IQ3_M. Long-context-at-quality is off the critical path for that workload.
-6. Optional: **power-cap sensitivity** (250 W vs 285 W) to see if the cap is limiting tg.
+   _fit_ not coherence, so a q4_0-KV quality pass would be needed before trusting sub-q8_0 KV at 49k+
+   (staged as step 6). For the **≤32k chat/agent workload this is ample** — IQ4_XS (best dense quality) is
+   fully viable there, so precision is preferred over IQ3_M. Long-context-at-quality is off the critical
+   path for that workload.
+6. **Coherence-check sub-q8_0 KV (q4_0-KV quality A/B — STAGED, not yet run).** The probe (step 5) proved
+   the IQ4_XS-class 49k fit is real, but a bench only proves the KV cache _fits_, not that answers stay
+   coherent under a coarser KV quant. Open question: does `q4_0` KV degrade answer quality vs `q8_0`?
+   Decisive A/B — re-run the same IQ4_XS-class configs and prompts at `q4_0` KV and compare scores against
+   the `q8_0` baseline `2026-07-03_125723` (same `GEN=8192 QCTX=16384`, only the KV quant differs, so any
+   score drop is attributable to KV). No harness change needed: `KV_QUANT` is env-overridable and the
+   per-model KV lookup is empty (`configs.sh:103` `kv_quant_for_label` returns `""`), so the global applies
+   uniformly. Runs on `debian-llm`:
+
+   ```bash
+   ONLY='IQ4_XS|HauhauCS_Balanced$' GEN=8192 QCTX=16384 KV_QUANT=q4_0 ./run-quality.sh
+   ```
+
+   Read: scores hold ⇒ `q4_0` KV is coherence-safe and the 49k fit is usable in practice (IQ4_XS becomes
+   a viable long-context pick, not just IQ3_M); scores drop ⇒ sub-q8_0 KV trades coherence for context, so
+   keep `q8_0` and fall back to IQ3_M for long context. If `q4_0` degrades, map the intermediate rungs
+   (`q5_1` → `q4_1`) to find the coherence/fit knee. Caveat: the prompts are short (they don't themselves
+   reach 49k), so this measures KV-quant coherence _per se_, not behaviour at extreme depth — a separate
+   deep-context coherence probe would need long-input prompts.
+7. Optional: **power-cap sensitivity** (250 W vs 285 W) to see if the cap is limiting tg.
 
 ## Run index
 
