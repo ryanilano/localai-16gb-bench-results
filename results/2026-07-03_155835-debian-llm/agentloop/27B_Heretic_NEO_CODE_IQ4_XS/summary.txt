@@ -1,0 +1,1 @@
+{"turns": 6, "tool_calls_valid": 5, "tool_calls_total": 5, "format_drift": 0, "think_chars": 607, "req_ms_median": 2114, "truncated_loop": false, "task_completed": true}

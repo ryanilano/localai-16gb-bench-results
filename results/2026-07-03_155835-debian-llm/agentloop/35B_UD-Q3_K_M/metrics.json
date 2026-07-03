@@ -1,0 +1,18 @@
+{
+  "turns": 4,
+  "tool_calls_total": 9,
+  "tool_calls_valid": 9,
+  "format_drift": 0,
+  "think_chars": 760,
+  "req_ms": [
+    4498,
+    4299,
+    4683,
+    2673
+  ],
+  "truncated_loop": false,
+  "task_completed": true,
+  "error": null,
+  "check_output": "....\n----------------------------------------------------------------------\nRan 4 tests in 0.000s\n\nOK\n",
+  "req_ms_median": 4498
+}
