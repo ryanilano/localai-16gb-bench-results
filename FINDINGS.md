@@ -123,6 +123,31 @@ Conclusions:
 - Verdicts are from LLM graders; the **FAIL claims** (Q4_K_XL semver, HauhauCS constraint, the two
   degenerate-loop outputs) are the ones worth an eyeball since they set the ranking.
 
+## Higher-GEN rerun — verdicts on the two real faults (`113237`, `123210`)
+
+The follow-up ran `GEN=8192` (double the `055350` budget). `113237` re-ran 5 configs at `QCTX=16384`;
+`123210` re-ran the two `NEO_CODE` variants at `QCTX=8192`. (`123132`, a `NEO_CODE` base attempt at
+`QCTX=8192`, aborted before answering any prompt — superseded by `123210`.) Grading the two faults the
+comprehensive pass flagged:
+
+- **`35B_UD-Q4_K_XL` / `01_semver_compare` — RESOLVED.** At full budget the MoE emits a complete,
+  **correct** comparator: string-`partition` parsing (no regex, so no crash), correct numeric-vs-alphanumeric
+  precedence, and the differing-field-count rule via `len()`. `1.0.0-alpha.1` vs `1.0.0-alpha.beta` now
+  returns `-1` correctly. The `055350` "regex crashes on `-alpha.beta`" fault was budget-induced, not a real
+  logic defect. Answer finished cleanly (no truncation).
+- **`27B_HauhauCS_Balanced` / `03_refactor_constrained` — STILL UNVERIFIED.** HauhauCS **failed to load**
+  at `QCTX=16384` (`failed to fit params to free device memory: n_gpu_layers already set by user to 99,
+  abort`) and produced **0 answers**. Note the base `27B_IQ4_XS` (same IQ4_XS quant, same size) loaded and
+  answered 9/9 in the _same_ run — so this smells like the known stale-server VRAM-leak gotcha (`0e1c60d`),
+  not a genuine model-size OOM. The stdlib-only constraint fault cannot be re-checked until HauhauCS boots
+  from a clean VRAM state.
+- **`NEO_CODE` A/B holds (`123210`):** both `27B_Heretic_NEO_CODE_IQ3_M` and base `27B_NEO_CODE_IQ3_M`
+  answered 9/9 with no truncation (max ~4.4 k tokens, well under budget). Abliteration-is-free stands; the
+  overall pick `27B_Heretic_NEO_CODE_IQ3_M` is unchanged.
+- **Doubling GEN did _not_ close all truncations.** 4 of 36 answers in `113237` still hit the 8192 cap —
+  2 in the over-thinking `Heretic_Youssofal`, 1 each in the two MoEs. The chronic reasoners burn even a
+  doubled budget on chain-of-thought; a GEN ceiling alone won't fix them.
+
 ## Known failures & data-quality caveats
 
 - **Hard FAILs with `vram_peak = 2 MiB`** (`27B_..._Q3_K_L`, `35B_Heretic_HauhauCS` Q4_K_P): these
@@ -190,18 +215,19 @@ Conclusions:
 
 ## Next steps
 
-1. **Re-run the quality matrix at higher GEN to close the 8 truncations.** The comprehensive pass
-   (`2026-07-03_055350`, GEN=4096) truncated 8 of 90 answers — mostly the two MoE configs and the
-   over-thinking `Heretic_Youssofal` merge, which run out of budget mid-think rather than answering wrong.
-   Re-run with a bigger answer budget so the ranking rests on finished answers (and the MoE gets a fair
-   shot at the coding prompts it currently loses to truncation):
+1. **Re-check `HauhauCS_Balanced` from a clean VRAM state.** The `GEN=8192` rerun is done
+   (`113237` + `123210`) and settled one of the two faults: `35B_UD-Q4_K_XL`'s semver "crash" was
+   budget-induced and the full-budget answer is correct (see "Higher-GEN rerun" above). The stdlib-constraint
+   fault is **still open** — HauhauCS failed to load at `QCTX=16384` (VRAM fit abort) and answered 0 prompts,
+   even though base `IQ4_XS` loaded fine the same run (smells like the stale-server leak, `0e1c60d`). Re-run
+   HauhauCS alone after a fresh boot to confirm whether it kept `requests` when told stdlib-only:
 
    ```bash
-   GEN=8192 QCTX=16384 ./run-quality.sh      # all configs now fit this; KV caps removed (0e1c60d)
+   ONLY='27B_HauhauCS_Balanced' GEN=8192 ./run-quality.sh   # boot clean; if it OOMs again, drop QCTX to 8192
    ```
 
-   Then confirm whether `35B_UD-Q4_K_XL`'s semver crash and `27B_HauhauCS_Balanced`'s stdlib-constraint
-   violation persist with a full budget (those are real faults, not truncations).
+   Residual: 4/36 answers in `113237` still truncated at `GEN=8192` (over-thinking `Heretic_Youssofal` + the
+   two MoEs) — a bigger budget alone won't fix the chronic reasoners.
 2. **Investigate the `vram=2` hard FAILs** (Q3_K_L dense, 35B Heretic HauhauCS Q4_K_P): confirm the GGUF
    exists/prefetched and the quant is supported by build 9859; re-run or drop from the matrix.
 3. **Push the MoE fit sweep further.** 35B MoE never hit a VRAM wall (fine at 261 k). Extend to
@@ -235,4 +261,6 @@ Conclusions:
 | `2026-07-03_040949` | quality | `35B_UD-IQ4_NL_XL` only; degenerate `////` output (model dropped) |
 | `2026-07-03_041809` | quality | **first real answers** — `35B_UD-Q3_K_M` + `Q4_K_XL`; 6 real, 12 truncated (raise GEN) |
 | `2026-07-03_055350` | quality | **first comprehensive pass** — 10 configs × 9 prompts, 82/90 real; see Quality results |
-| `2026-07-03_113237` | quality | partial re-run — 5 configs (HauhauCS, Youssofal, IQ4_XS + 2 MoE), 32 real |
+| `2026-07-03_113237` | quality | `GEN=8192 QCTX=16384` re-run — 5 configs; 4/5 answered 9/9 (32 real, 4 still trunc); **HauhauCS failed to load** (VRAM fit abort, 0 answers) |
+| `2026-07-03_123132` | quality | `NEO_CODE` base at `QCTX=8192`; aborted before any answer — superseded by `123210` |
+| `2026-07-03_123210` | quality | `GEN=8192` A/B — `Heretic_NEO_CODE_IQ3_M` + base `NEO_CODE_IQ3_M`, 9/9 each, no trunc |
