@@ -252,7 +252,14 @@ Grading them:
    run a quality pass — bench proves _fit_, not coherence, and sub-q8_0 KV could degrade answers);
    `FAIL→FAIL` ⇒ weights-bound, KV quant can't help and IQ3_M stays the long-context pick. Caveat:
    `27B_HauhauCS_Balanced` carries an mmproj — a _load-time_ abort (`vram≈2 MiB`) there is the vision-
-   projector OOM, not a KV wall; read it separately from the other three. [results: pending]
+   projector OOM, not a KV wall; read it separately from the other three.
+   **RESULT — KV-BOUND & TUNABLE** (`2026-07-03_151252` q8_0, `2026-07-03_151915` q4_0): going q8_0→q4_0
+   moved the OOM wall out ~2 depth rungs for every config — `27B_IQ4_XS` 16k→**49k**, `NEO_CODE_IQ4_XS`
+   16k→**49k**, `Heretic_NEO_CODE_IQ4_XS` 16k→**49k**, `HauhauCS_Balanced` 32k→**65k**. So the ceiling is
+   the KV buffer, not the ~15 GB weights (deepest OK rung ~15.8 GiB, near the 15943 ceiling). Bench proves
+   _fit_ not coherence, so a q4_0-KV quality pass would be needed before trusting sub-q8_0 KV at 49k+.
+   For the **≤32k chat/agent workload this is ample** — IQ4_XS (best dense quality) is fully viable there,
+   so precision is preferred over IQ3_M. Long-context-at-quality is off the critical path for that workload.
 6. Optional: **power-cap sensitivity** (250 W vs 285 W) to see if the cap is limiting tg.
 
 ## Run index
