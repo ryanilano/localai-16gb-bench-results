@@ -234,35 +234,52 @@ Grading them:
 3. **Push the MoE fit sweep further.** 35B MoE never hit a VRAM wall (fine at 261 k). Extend to
    512 k / 1 M to find the *actual* max context on 16 GB, and record the tg curve as it degrades.
 4. **Backfill `RUN.md`** for `2026-07-02_221547` and `_223156` from their existing `json/`.
-5. **Confirm the IQ4_XS 32 k ceiling** is fundamental vs. tunable (flash-attn, KV cache quant e.g.
-   `-ctk/-ctv q8_0`) — KV-cache quantization might push dense IQ4_XS past 16 k.
+5. **Confirm the IQ4_XS 32 k ceiling is fundamental vs. tunable (KV-quant probe — STAGED, not yet run).**
+   Correction: the throughput sweep **already runs with `-fa on` and `q8_0` KV** as hardcoded defaults
+   (`run-bench.sh` `-ctk/-ctv "$KV_QUANT"`, `configs.sh KV_QUANT="q8_0"`), so the documented IQ4_XS wall
+   was measured _with_ flash-attn + q8_0 KV — those are not untried levers. The remaining lever is a
+   **more aggressive** KV quant than q8_0 (q5_1 → q4_1 → q4_0), which halves the KV buffer again. Harness
+   prepped for this: `KV_QUANT` is now env-overridable (`configs.sh:74`, `${KV_QUANT:-q8_0}` — not yet
+   committed). Two-rung decisive probe over the whole IQ4_XS **dense class** (stock `27B_IQ4_XS`,
+   `27B_HauhauCS_Balanced`, `27B_NEO_CODE_IQ4_XS`, `27B_Heretic_NEO_CODE_IQ4_XS`):
+
+   ```bash
+   ONLY='IQ4_XS|HauhauCS_Balanced$' BENCH_PROFILE=longctx KV_QUANT=q8_0 ./run-bench.sh   # baseline wall
+   ONLY='IQ4_XS|HauhauCS_Balanced$' BENCH_PROFILE=longctx KV_QUANT=q4_0 ./run-bench.sh   # aggressive
+   ```
+
+   Read `status`/`vram_peak` at depth ≥32768: `FAIL→OK` ⇒ KV-bound & tunable (then map `q5_1`/`q4_1` and
+   run a quality pass — bench proves _fit_, not coherence, and sub-q8_0 KV could degrade answers);
+   `FAIL→FAIL` ⇒ weights-bound, KV quant can't help and IQ3_M stays the long-context pick. Caveat:
+   `27B_HauhauCS_Balanced` carries an mmproj — a _load-time_ abort (`vram≈2 MiB`) there is the vision-
+   projector OOM, not a KV wall; read it separately from the other three. [results: pending]
 6. Optional: **power-cap sensitivity** (250 W vs 285 W) to see if the cap is limiting tg.
 
 ## Run index
 
 | Run | Contents | Notes |
 | --- | --- | --- |
-| `2026-07-01_202112` | csv + json + quality | earliest; no versions.txt; quality empty |
-| `2026-07-02_175923` | csv + RUN.md | bench-only; json lost |
-| `2026-07-02_193446` | full | broad dense+MoE matrix |
-| `2026-07-02_204121` | full | broad dense+MoE matrix |
-| `2026-07-02_215109` | full | broad dense+MoE matrix |
-| `2026-07-02_221547` | csv + json | no RUN.md |
-| `2026-07-02_223156` | csv + json | deep MoE sweep (→131 k) |
-| `2026-07-02_223927` | full | deep sweeps, MoE →261 k |
-| `2026-07-03_004208` | full | **Heretic_NEO_CODE** IQ3_M + IQ4_XS |
-| `2026-07-03_005125` | full | **Heretic_NEO_CODE** IQ3_M →80 k |
-| `2026-07-03_010929` | quality | 9 prompts × 8 configs; all "no response" (mmproj OOM) |
-| `2026-07-03_013430` | quality | partial (3 configs); server boots but HTTP 500 empty-body |
-| `2026-07-03_013717` | quality | 9 prompts × 11 configs; all **blank** (stale-server port race — now fixed) |
-| `2026-07-03_033803` | throughput | empty csv (aborted) |
-| `2026-07-03_034042` | throughput | `27B_IQ4_XS` — OK to 16 k, FAIL at 32 k (VRAM wall) |
-| `2026-07-03_034918` | quality | `27B_IQ4_XS` only; blank — KV-cache OOM at `QCTX` |
-| `2026-07-03_035800` | quality | `27B_IQ4_XS` only; blank — `cudaMalloc` OOM |
-| `2026-07-03_040949` | quality | `35B_UD-IQ4_NL_XL` only; degenerate `////` output (model dropped) |
-| `2026-07-03_041809` | quality | **first real answers** — `35B_UD-Q3_K_M` + `Q4_K_XL`; 6 real, 12 truncated (raise GEN) |
-| `2026-07-03_055350` | quality | **first comprehensive pass** — 10 configs × 9 prompts, 82/90 real; see Quality results |
-| `2026-07-03_113237` | quality | `GEN=8192 QCTX=16384` re-run — 5 configs; 4/5 answered 9/9 (32 real, 4 still trunc); **HauhauCS failed to load** (VRAM fit abort, 0 answers) |
-| `2026-07-03_123132` | quality | `NEO_CODE` base at `QCTX=8192`; aborted before any answer — superseded by `123210` |
-| `2026-07-03_123210` | quality | `GEN=8192` A/B — `Heretic_NEO_CODE_IQ3_M` + base `NEO_CODE_IQ3_M`, 9/9 each, no trunc |
-| `2026-07-03_125723` | quality | `GEN=8192 QCTX=16384` re-run — 5 configs incl. HauhauCS (loaded clean, 9/9); **stdlib-constraint fault RESOLVED** (uses `urllib`) |
+| [`2026-07-01_202112`](results/2026-07-01_202112-debian-llm/) | csv + json + quality | earliest; no versions.txt; quality empty |
+| [`2026-07-02_175923`](results/2026-07-02_175923-debian-llm/) | csv + RUN.md | bench-only; json lost |
+| [`2026-07-02_193446`](results/2026-07-02_193446-debian-llm/) | full | broad dense+MoE matrix |
+| [`2026-07-02_204121`](results/2026-07-02_204121-debian-llm/) | full | broad dense+MoE matrix |
+| [`2026-07-02_215109`](results/2026-07-02_215109-debian-llm/) | full | broad dense+MoE matrix |
+| [`2026-07-02_221547`](results/2026-07-02_221547-debian-llm/) | csv + json | no RUN.md |
+| [`2026-07-02_223156`](results/2026-07-02_223156-debian-llm/) | csv + json | deep MoE sweep (→131 k) |
+| [`2026-07-02_223927`](results/2026-07-02_223927-debian-llm/) | full | deep sweeps, MoE →261 k |
+| [`2026-07-03_004208`](results/2026-07-03_004208-debian-llm/) | full | **Heretic_NEO_CODE** IQ3_M + IQ4_XS |
+| [`2026-07-03_005125`](results/2026-07-03_005125-debian-llm/) | full | **Heretic_NEO_CODE** IQ3_M →80 k |
+| [`2026-07-03_010929`](results/2026-07-03_010929-debian-llm/) | quality | 9 prompts × 8 configs; all "no response" (mmproj OOM) |
+| [`2026-07-03_013430`](results/2026-07-03_013430-debian-llm/) | quality | partial (3 configs); server boots but HTTP 500 empty-body |
+| [`2026-07-03_013717`](results/2026-07-03_013717-debian-llm/) | quality | 9 prompts × 11 configs; all **blank** (stale-server port race — now fixed) |
+| [`2026-07-03_033803`](results/2026-07-03_033803-debian-llm/) | throughput | empty csv (aborted) |
+| [`2026-07-03_034042`](results/2026-07-03_034042-debian-llm/) | throughput | `27B_IQ4_XS` — OK to 16 k, FAIL at 32 k (VRAM wall) |
+| [`2026-07-03_034918`](results/2026-07-03_034918-debian-llm/) | quality | `27B_IQ4_XS` only; blank — KV-cache OOM at `QCTX` |
+| [`2026-07-03_035800`](results/2026-07-03_035800-debian-llm/) | quality | `27B_IQ4_XS` only; blank — `cudaMalloc` OOM |
+| [`2026-07-03_040949`](results/2026-07-03_040949-debian-llm/) | quality | `35B_UD-IQ4_NL_XL` only; degenerate `////` output (model dropped) |
+| [`2026-07-03_041809`](results/2026-07-03_041809-debian-llm/) | quality | **first real answers** — `35B_UD-Q3_K_M` + `Q4_K_XL`; 6 real, 12 truncated (raise GEN) |
+| [`2026-07-03_055350`](results/2026-07-03_055350-debian-llm/) | quality | **first comprehensive pass** — 10 configs × 9 prompts, 82/90 real; see Quality results |
+| [`2026-07-03_113237`](results/2026-07-03_113237-debian-llm/) | quality | `GEN=8192 QCTX=16384` re-run — 5 configs; 4/5 answered 9/9 (32 real, 4 still trunc); **HauhauCS failed to load** (VRAM fit abort, 0 answers) |
+| [`2026-07-03_123132`](results/2026-07-03_123132-debian-llm/) | quality | `NEO_CODE` base at `QCTX=8192`; aborted before any answer — superseded by `123210` |
+| [`2026-07-03_123210`](results/2026-07-03_123210-debian-llm/) | quality | `GEN=8192` A/B — `Heretic_NEO_CODE_IQ3_M` + base `NEO_CODE_IQ3_M`, 9/9 each, no trunc |
+| [`2026-07-03_125723`](results/2026-07-03_125723-debian-llm/) | quality | `GEN=8192 QCTX=16384` re-run — 5 configs incl. HauhauCS (loaded clean, 9/9); **stdlib-constraint fault RESOLVED** (uses `urllib`) |
