@@ -13,6 +13,10 @@ measured across increasing context depth (a "fit sweep").
 - **Stack:** CUDA 13.3 (nvcc V13.3.73), driver 595.71.05, llama.cpp build **9859 (`4fc4ec554`)**, GCC 14.2.0
 - **Metrics per (model, quant, depth):** `pp_tok_s` (prefill), `tg_tok_s` (token gen), `vram_peak_mib`, `ram_used_peak_mib`, `status`
 
+Three benchmark dimensions now feed this: **throughput/fit** (the depth sweep above), **quality**
+(scored answers to fixed prompts), and **agentic tool-use** (an agent-loop sandbox that scores whether
+the model fixes a bug through tool calls). See the respective sections below.
+
 Two model families under test:
 
 | Family | Arch | Quants tried | Variants |
@@ -179,6 +183,31 @@ Grading them:
   2 in the over-thinking `Heretic_Youssofal`, 1 each in the two MoEs. The chronic reasoners burn even a
   doubled budget on chain-of-thought; a GEN ceiling alone won't fix them.
 
+## Agentic tool-use — first pass (`154255`, `154757`, `155835`)
+
+A third benchmark dimension landed on 2026-07-03: an **agent-loop** harness that drops the model in a
+sandbox with a buggy module + a test file and makes it fix the bug **through tool calls**, scoring
+`task_completed` (tests pass), tool-call validity, format drift (raw `<tool_call>` vs structured),
+loop truncation, thinking-token burn, turns, and per-request latency. All runs were `GEN=2048
+QCTX=16384 TEMP=0.2` on the current stack (llama.cpp 9859 `4fc4ec554`).
+
+**Every config passed every scenario, cleanly — zero format drift, all tool calls valid, no loop
+truncation.** This is the first agentic-competence signal and it is uniformly positive; notably the
+35B MoEs — which had faults on the earlier quality pass — handle tool-use fine.
+
+| Scenario | Configs (all PASS) | Tools | Turns |
+| --- | --- | --- | --- |
+| `fixbug` (single file) — `154255` | `Heretic_NEO_CODE_IQ4_XS` | 4/4 | 4 |
+| `fixbug` (single file) — `154757` | `27B_IQ4_XS`, `35B_UD-Q4_K_XL`, `35B_UD-Q3_K_M`, `HauhauCS_Balanced` | 4/4 | 4 |
+| `multifile` — `155835` | `27B_IQ4_XS`, `35B_UD-Q4_K_XL`, `35B_UD-Q3_K_M`, `HauhauCS_Balanced` | 9–10/9–10 | 4–6 |
+
+- **Latency splits on family, as expected.** Dense 27B median ~2.5–3.3 s/request; the 35B MoEs
+  ~4.0–4.8 s/request (~1.6–1.8× slower) — the MoE's tg-speed edge at long context does not carry over
+  to short-context agentic turns, where dense wins on responsiveness.
+- **Caveat:** these are the easiest possible agentic tasks (a 4-turn single-bug fix). A uniform PASS
+  says the tool-calling _plumbing_ works for all configs, not that they'd diverge on harder tasks.
+  Harder scenarios are needed before ranking configs on agentic ability.
+
 ## Known failures & data-quality caveats
 
 - **Hard FAILs with `vram_peak = 2 MiB`** (`27B_..._Q3_K_L`, `35B_Heretic_HauhauCS` Q4_K_P): these
@@ -314,3 +343,8 @@ Grading them:
 | [`2026-07-03_123132`](results/2026-07-03_123132-debian-llm/) | quality | `NEO_CODE` base at `QCTX=8192`; aborted before any answer — superseded by `123210` |
 | [`2026-07-03_123210`](results/2026-07-03_123210-debian-llm/) | quality | `GEN=8192` A/B — `Heretic_NEO_CODE_IQ3_M` + base `NEO_CODE_IQ3_M`, 9/9 each, no trunc |
 | [`2026-07-03_125723`](results/2026-07-03_125723-debian-llm/) | quality | `GEN=8192 QCTX=16384` re-run — 5 configs incl. HauhauCS (loaded clean, 9/9); **stdlib-constraint fault RESOLVED** (uses `urllib`) |
+| [`2026-07-03_151252`](results/2026-07-03_151252-debian-llm/) | throughput | KV-quant probe rung 1 (`q8_0`) — IQ4_XS class walls at 16 k / HauhauCS 32 k |
+| [`2026-07-03_151915`](results/2026-07-03_151915-debian-llm/) | throughput | KV-quant probe rung 2 (`q4_0`) — same class reaches 49 k / HauhauCS 65 k; **wall is KV-bound** |
+| [`2026-07-03_154255`](results/2026-07-03_154255-debian-llm/) | agentloop | `fixbug` — `Heretic_NEO_CODE_IQ4_XS` PASS (4/4 tools, 0 drift) |
+| [`2026-07-03_154757`](results/2026-07-03_154757-debian-llm/) | agentloop | `fixbug` — 4 configs (incl. both MoEs) all PASS |
+| [`2026-07-03_155835`](results/2026-07-03_155835-debian-llm/) | agentloop | `multifile` — same 4 configs all PASS (9–10 tools) |
