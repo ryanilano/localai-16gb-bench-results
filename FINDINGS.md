@@ -50,10 +50,28 @@ Two model families under test:
 
 | Need | Pick |
 | --- | --- |
-| Max context (64 k+) + fastest generation | **35B MoE** — `UD-IQ4_NL_XL` or `UD-Q3_K_M` |
+| Max context (64 k+) + fastest generation | **35B MoE** — `UD-Q3_K_M` (`UD-IQ4_NL_XL` dropped: degenerate output) |
 | Best dense quality, short/medium context (≤16 k) | **27B IQ4_XS** (incl. Heretic_NEO_CODE) |
 | Dense + long context on 16 GB | **27B IQ3_M** (Heretic_NEO_CODE / NEO_CODE) |
 | Fastest prefill | dense IQ4_XS (~1.7 k tok/s) |
+
+### 35B MoE quant pick: Q3_K_M vs Q4_K_XL
+
+**`UD-Q3_K_M` is the better default.** Both are the same MoE with experts offloaded, so both fit trivially
+(VRAM ~2.8→6 GiB out to 261 k) — the difference is speed, RAM, and precision:
+
+| | Q3_K_M | Q4_K_XL |
+| --- | --- | --- |
+| Prefill (pp tok/s) | **471–848** | 249–635 |
+| Token-gen (tg tok/s) | 48–57 → 33 @261 k | 48–54 → 27 @261 k |
+| Model size (system RAM) | **15.45 GiB** | 20.81 GiB |
+| Precision | 3-bit-ish | **4-bit-ish** |
+
+Q3_K_M has clearly higher prefill (esp. deep context), matches tg shallow and beats it deep, and needs
+~5.4 GiB less RAM. On quality it was **indistinguishable** from Q4_K_XL in `2026-07-03_041809` — but that
+rests on only **2 prompts where both models emitted a final answer** (the rest truncated on GEN), so it is
+not a certified tie. Q4_K_XL's higher precision _should_ give it a marginal reasoning edge; reserve judgment
+until a GEN-raised full pass can actually measure it. **For now: Q3_K_M — faster, lighter, no measured quality cost.**
 
 ## Known failures & data-quality caveats
 
@@ -64,34 +82,78 @@ Two model families under test:
   `35B_UD-Q4_K_XL` d0 prefill swings 261→615 across runs, and `ram_used_peak` spikes (23 812, 15 157 MiB)
   appear only on the first sample after prefetch (page-cache), not on warm rows. Trust the warm, repeated
   numbers; treat single outliers with suspicion.
-- **Quality passes still produce no answers — root cause now diagnosed (mmproj OOM).** Two quality
-  runs exist and both recorded `(no response — see _server.log)` for every prompt:
-  `2026-07-01_202112` (3 prompts) and the newer `2026-07-03_010929` (expanded to 9 prompts × 8 configs).
-  The `2026-07-03_010929/_server.log` shows the cause: the `-hf` resolver auto-loads a **vision
-  projector (mmproj/CLIP)** for these Qwen3.6 repos, and on the 16 GB card the ~888 MiB CLIP buffer
-  `cudaMalloc failed: out of memory` _after_ the model is fully offloaded at `-ngl 99` — the server
-  aborts on boot, so every prompt logs "no response". Throughput passed because the `llama-bench` path
-  is text-only and never loads the projector.
-  - **Fix applied in the harness** (`localai-16gb-bench`, not this results repo): `run-quality.sh`,
-    `serve-27b-uncensored.sh`, and `serve-35b-moe.sh` now launch `llama-server` with `--no-mmproj`.
-    Awaiting a re-run to confirm.
-  - **Harness hardening (same change):** the server log is now per-model
+- **Quality pipeline: fixed after a three-failure chain — first real answers landed `2026-07-03_041809`.**
+  Getting any gradable answer took clearing three distinct harness failures, each exposed only after the
+  previous was fixed. The historical chain:
+  1. **mmproj OOM (`2026-07-01_202112`, `2026-07-03_010929`).** Both recorded `(no response — see
+     _server.log)` for every prompt. Cause: the `-hf` resolver auto-loads a **vision projector
+     (mmproj/CLIP)** for these Qwen3.6 repos, and on the 16 GB card the ~888 MiB CLIP buffer
+     `cudaMalloc failed: out of memory` _after_ the model is fully offloaded at `-ngl 99` — the server
+     aborts on boot. **Fixed** in the harness (`--no-mmproj` on all `llama-server` launches).
+  2. **Empty request bodies (`2026-07-03_013430`).** With mmproj fixed the server now *boots*, but every
+     request returned HTTP 500 `parse_error … attempting to parse an empty input` — the harness sent
+     empty JSON. Incomplete run: only 3 configs produced files, `35B_UD-Q3_K_M` produced 0.
+  3. **Stale-server port race (`2026-07-03_013717`).** The most complete matrix (11 configs × 9 prompts)
+     and the closest to a real pass — but all 99 answers are **blank**. Every `_server.log` shows
+     `couldn't bind HTTP server socket … port 8080 … exiting`: a **stale `llama-server` already held
+     :8080** (a leftover — the quality pass and both `serve-*.sh` scripts all default to 8080). Each
+     freshly launched server died on bind, but the stale server answered the harness's `/health` poll,
+     so `start_server` mistook it for ours and sent every prompt to the wrong (or empty) server;
+     `stop_server` then killed only the just-died PID, so the stale server survived all 11 configs.
+     (The answers are truly *blank* rather than the `(no response)` marker because the stale server
+     returned `content: ""`, and jq's `//` fallback only fires on `null`, not empty string.)
+  - **Fix applied in the harness** (`localai-16gb-bench`, branch `fix/quality-port-lifecycle`): after
+    `pkill`-ing stale servers, poll until `:8080` is actually free before binding; and in the readiness
+    loop, confirm our own `SRV_PID` is alive **before** trusting a `/health` 200, so a foreign server
+    can never masquerade as ready (a bind failure now yields a clean skip, not silent blanks). The
+    empty-content case is also now guarded so a blank can't pose as an answer. **Awaiting a re-run to
+    confirm.** Note the maintainer had already independently added the `pkill` and empty/`reasoning_content`
+    handling; this fix closes the remaining health-check ordering gap.
+  - **Harness hardening (earlier change):** the server log is now per-model
     (`quality/<label>/_server.log`) instead of one clobbered `_server.log`, so a crash for one config
-    no longer erases the next's log. `-ngl` is now per-config (CONFIGS field 6, default 99 = full
-    offload) and a config that fails to boot auto-retries once with `-ngl -1` (llama.cpp auto-fit) —
-    RUN.md records the effective ngl per model, so watch for `[ngl=-1 (auto-fit fallback)]`: that model
-    ran with layers on CPU, not the full-offload regime the throughput numbers assume.
-  - **All quality conclusions remain TODO; only throughput is validated so far.**
+    no longer erases the next's log. `-ngl` is per-config (CONFIGS field 6, default 99 = full offload)
+    and a config that fails to boot auto-retries once with `-ngl -1` (llama.cpp auto-fit) — RUN.md
+    records the effective ngl per model, so watch for `[ngl=-1 (auto-fit fallback)]`: that model ran
+    with layers on CPU, not the full-offload regime the throughput numbers assume.
+  - **Pipeline now works end-to-end (runs `033803`–`041809`, live operator debugging on `debian-llm`).**
+    Server boots cleanly, no mmproj/port/blank failures. Real answers appear from `2026-07-03_041809`:
+    `35B_UD-Q3_K_M` and `35B_UD-Q4_K_XL` produced correct output where they finished — e.g. Q4_K_XL's
+    palindrome is a clean, correct `unittest` solution and Q3_K_M's strict-format is a **flawless** JSON
+    array (exact keys/values, tags sorted ascending, no prose, one line). First real quality signal, and
+    it's promising — but only a handful of answers so far; no ranking is justified yet.
+  - **Two model-side blockers remain (not harness bugs):**
+    1. **Reasoning-budget truncation.** These Qwen3.6 MoE models are _thinking_ models; `GEN=768`
+       max_tokens is too small, so the think phase eats the budget and 12 of 18 answers in `041809`
+       are `⚠️ reasoning only — no final answer (raise GEN)`. Fix: raise `GEN` substantially (or cap the
+       think phase) before a full pass.
+    2. **`35B_UD-IQ4_NL_XL` emits degenerate output** (endless `////`, reasoning-only) — see `040949`.
+       Already diagnosed and **dropped from `CONFIGS`** by the maintainer (`5763692`).
+  - **Dense `27B_IQ4_XS` can't hold the quality-pass context on 16 GB** (`034918`, `035800`): the server
+    boots but OOMs allocating the KV cache (`failed to allocate buffer for kv cache` / `cudaMalloc failed`),
+    consistent with the throughput finding that IQ4_XS is VRAM-bound. Lower `QCTX` or use a smaller quant
+    (IQ3_M) for its quality pass.
+  - **Only throughput is fully validated; quality is now _unblocked_ but not yet complete.** Once `GEN` is
+    raised, re-run the full matrix for a real cross-model quality comparison.
 - **Provenance gaps in early runs** (documented in `README.md`): `2026-07-01_202112` predates version
   stamping (CUDA 13.1, footer-appended); `2026-07-02_175923` lost its `json/` to the old flat layout;
   `2026-07-02_221547` and `_223156` have `json/` but no `RUN.md`.
 
 ## Next steps
 
-1. **Re-run the quality pass** now that the harness is fixed (`--no-mmproj` added to all `llama-server`
-   launches). The `2026-07-03_010929` matrix (9 prompts × 8 configs) is ready to re-run; confirm it now
-   produces real answers, then judge which merge is actually smarter — throughput tells us what fits and
-   how fast, but not that. This remains the biggest open gap until a clean pass lands.
+1. **Run the full quality matrix with enough answer budget.** The pipeline works (`2026-07-03_041809`
+   produced real, correct answers), but the answer limit (`GEN`) truncates these reasoning models
+   mid-think: `GEN=768` left answers blank, and even `GEN=2048` truncated 12 of 18 answers in `041809`
+   (that run used 2048 — the think phase alone exceeds it on debug/refactor/multi-step prompts). The
+   harness default is now `GEN=4096` (fits short prompts + most reasoning within `QCTX=8192`). **For a
+   deep MoE quality pass, drive it wider:**
+
+   ```bash
+   GEN=8192 QCTX=16384 ./run-quality.sh      # MoE only — big think budget + room in the window
+   ```
+
+   Keep `QCTX` modest for the **VRAM-bound dense quants** (`27B_IQ4_XS` OOMs on KV even at 8192 — use a
+   lower `QCTX` or the `IQ3_M` quant for its pass). Also drop the degenerate `35B_UD-IQ4_NL_XL`. Then run
+   all configs × prompts and judge which merge is actually smarter. Biggest open gap until a clean pass lands.
 2. **Investigate the `vram=2` hard FAILs** (Q3_K_L dense, 35B Heretic HauhauCS Q4_K_P): confirm the GGUF
    exists/prefetched and the quant is supported by build 9859; re-run or drop from the matrix.
 3. **Push the MoE fit sweep further.** 35B MoE never hit a VRAM wall (fine at 261 k). Extend to
@@ -115,4 +177,12 @@ Two model families under test:
 | `2026-07-02_223927` | full | deep sweeps, MoE →261 k |
 | `2026-07-03_004208` | full | **Heretic_NEO_CODE** IQ3_M + IQ4_XS |
 | `2026-07-03_005125` | full | **Heretic_NEO_CODE** IQ3_M →80 k |
-| `2026-07-03_010929` | quality | 9 prompts × 8 configs; all "no response" (mmproj OOM — harness now fixed) |
+| `2026-07-03_010929` | quality | 9 prompts × 8 configs; all "no response" (mmproj OOM) |
+| `2026-07-03_013430` | quality | partial (3 configs); server boots but HTTP 500 empty-body |
+| `2026-07-03_013717` | quality | 9 prompts × 11 configs; all **blank** (stale-server port race — now fixed) |
+| `2026-07-03_033803` | throughput | empty csv (aborted) |
+| `2026-07-03_034042` | throughput | `27B_IQ4_XS` — OK to 16 k, FAIL at 32 k (VRAM wall) |
+| `2026-07-03_034918` | quality | `27B_IQ4_XS` only; blank — KV-cache OOM at `QCTX` |
+| `2026-07-03_035800` | quality | `27B_IQ4_XS` only; blank — `cudaMalloc` OOM |
+| `2026-07-03_040949` | quality | `35B_UD-IQ4_NL_XL` only; degenerate `////` output (model dropped) |
+| `2026-07-03_041809` | quality | **first real answers** — `35B_UD-Q3_K_M` + `Q4_K_XL`; 6 real, 12 truncated (raise GEN) |
