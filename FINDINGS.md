@@ -26,8 +26,10 @@ Two model families under test:
    **~2.8–6 GiB even out to 261 k context** — it never came close to the VRAM ceiling. Token-gen is
    the fastest of anything tested (**~47–58 tok/s** shallow, still ~33 tok/s at 261 k). Prefill is
    lower than dense (~600–860 tok/s). This is the pick when you want long context + fast generation.
-   - `35B_UD-Q3_K_M` and `35B_UD-IQ4_NL_XL` are the best of the three; `UD-IQ4_NL_XL` gives the best
-     prefill and highest effective precision among the MoE quants.
+   - On throughput, `35B_UD-Q3_K_M` and `35B_UD-IQ4_NL_XL` are the best of the three. **But
+     `UD-IQ4_NL_XL` was later dropped — it emits degenerate output on the quality pass** (see below), so
+     `UD-Q3_K_M` is the usable MoE pick. And on the coding quality pass the MoE lost to dense NEO_CODE
+     (conclusion 4) — MoE's edge is long-context + tg speed, not coding correctness.
 
 2. **Dense 27B is prefill-fast but VRAM-bound.** Prefill is much higher (~1400–1730 tok/s) but
    token-gen is lower (~30–41 tok/s) and VRAM fills fast:
@@ -45,6 +47,13 @@ Two model families under test:
    - `27B_Heretic_NEO_CODE_IQ4_XS` runs to 16 k but **FAILs at 32 k** (same IQ4_XS wall as the other
      dense variants) — see `2026-07-03_004208`.
    - Takeaway so far: **IQ3_M is the long-context config for this merge; IQ4_XS is the ~16 k / higher-quality config.**
+
+4. **On quality (first comprehensive pass, `2026-07-03_055350`), the dense NEO_CODE line wins — and
+   abliteration is free.** The Heretic-abliterated NEO_CODE variants scored **identically** to the base on
+   9 coding/reasoning/format prompts, and IQ3_M matched IQ4_XS — so **`27B_Heretic_NEO_CODE_IQ3_M` is the
+   pick: top-tier quality _and_ 80 k context.** The 35B MoE, the throughput champion, actually
+   **underperformed dense on coding** here (a real semver bug in `UD-Q4_K_XL`, plus truncations). See the
+   quality section below; note some MoE losses are GEN-budget truncations, not wrong answers.
 
 ## Rough decision guide
 
@@ -73,24 +82,46 @@ rests on only **2 prompts where both models emitted a final answer** (the rest t
 not a certified tie. Q4_K_XL's higher precision _should_ give it a marginal reasoning edge; reserve judgment
 until a GEN-raised full pass can actually measure it. **For now: Q3_K_M — faster, lighter, no measured quality cost.**
 
-### Dense quality-pass fit (which dense quants can be tested on 16 GB)
+### Dense quality-pass fit (all dense quants run at the default QCTX=8192 / q8_0)
 
-The quality server preallocates the **entire `QCTX` KV cache at load** (unlike the throughput bench,
-which grows KV with depth), so a dense quant that "fits 16 k" in the sweep can still OOM as a server. The
-lever is weights-at-load headroom under the **15943 MiB** ceiling (a full `QCTX=8192` KV ≈ **2720 MiB**):
+**Every active dense quant boots and answers cleanly at the default `QCTX=8192` / `q8_0` KV** — no
+per-model caps needed. This corrects an earlier misdiagnosis: `27B_IQ4_XS` OOM'd allocating its 2720 MiB
+KV buffer in `2026-07-03_034918`/`_035800`, which looked like the ~15 GB weights leaving no room for the
+KV window. But both those runs **predate the stale-server port-race fix** (`b3a45fe`), and the real cause
+was a killed-wrong-PID server still **holding VRAM**. Post-fix, `2026-07-03_055350` ran all 8 dense configs
+(IQ4_XS included) with **0 OOM**, and the throughput sweep independently shows IQ4_XS's full 16 k footprint
+is only ~15.5 GiB (< 15943). The per-model `qctx_for_label` / `kv_quant_for_label` lookups in `configs.sh`
+are therefore **empty** (commit `0e1c60d`) — the machinery stays for any genuine future OOM, but no quant
+currently needs it.
 
-| Dense quant | Weights @load | QCTX=8192 KV fits? | Quality-pass setting |
-| --- | --- | --- | --- |
-| **IQ3_M** (NEO_CODE, Heretic_NEO_CODE) | 12712 | ✅ | default (8192 / q8_0) — safest |
-| **Q3_K_M** (Heretic_Youssofal) | 13102 | ✅ (tight) | default (8192 / q8_0) |
-| **Q3_K_P** (HauhauCS) | 14056 | ⚠️ ~16 000 → OOM | **QCTX 6144** |
-| **IQ4_XS** (all merges) | ~14970 | ❌ | **QCTX 4096 + q4_0 KV** (best-effort; may truncate long answers) |
+## Quality results — first comprehensive pass (`2026-07-03_055350`)
 
-These are now wired into the harness as `qctx_for_label` / `kv_quant_for_label` lookups in `configs.sh`
-(commit `bf13553`), so a full quality run picks safe values per model automatically. **IQ4_XS dense is a
-poor fit for a reasoning-budget pass regardless** — prefer its IQ3_M sibling for quality and keep IQ4_XS as
-a throughput / short-context (≤16 k) config. Headroom figures are from the text-only sweep; the server adds
-a little for chat-template/compute buffers, so expect to nudge `QCTX` down a notch if a first boot still OOMs.
+10 configs × 9 prompts (coding, refactor, planning, strict-format, tool-call, dual-use security); GEN=4096.
+82/90 real answers (8 GEN-budget truncations, 0 blank, 0 OOM). Graded for correctness:
+
+| Tier | Config | Record (9 prompts) |
+| --- | --- | --- |
+| **Flawless** | `27B_Heretic_NEO_CODE_IQ4_XS`, `27B_NEO_CODE_IQ4_XS`, `27B_Heretic_NEO_CODE_IQ3_M`, `27B_IQ4_XS` | 9/9 correct, 0 truncations |
+| **One blemish** | `27B_HauhauCS_Balanced_Q3_K_P` (1 trunc); `27B_NEO_CODE_IQ3_M` (1 degenerate `//\|//` loop on agent_plan) | 8 good |
+| **A real fault** | `35B_UD-Q4_K_XL` (semver regex crashes on `-alpha.beta`; best instruction-follower otherwise) | + 1 trunc |
+| | `35B_UD-Q3_K_M` (2 trunc, minor `git grep -E` slip) | |
+| | `27B_HauhauCS_Balanced` (constraint FAIL — kept `requests` when told stdlib-only) | + 1 trunc |
+| **Worst** | `27B_Heretic_Youssofal_Q3_K_M` (4/9 truncated + bailed on tool-call — chronic over-thinking) | |
+
+Conclusions:
+
+- **Abliteration is free (NEO_CODE line):** Heretic-abliterated == base on coding quality — answers the
+  open question in `configs.sh`. Both IQ3_M and IQ4_XS variants are top-tier.
+- **IQ3_M ≈ IQ4_XS on quality**, so IQ3_M wins overall (same quality, lighter, 80 k context). **Overall
+  pick: `27B_Heretic_NEO_CODE_IQ3_M`.**
+- **MoE underperformed dense on this coding pass** — a genuine `UD-Q4_K_XL` semver crash plus truncations.
+  Caveat: most MoE losses are GEN=4096 truncations (they think longer), not wrong answers; a higher-GEN
+  rerun would give them a fairer shot.
+- **Two non-discriminating prompts:** `05_strict_format` — all 10 produced identical perfect JSON;
+  `06_security_dualuse` — all 10 (censored _and_ abliterated) complied with sound defensive SQLi answers,
+  so it does **not** test abliteration. A prompt a standard model actually refuses is needed for that.
+- Verdicts are from LLM graders; the **FAIL claims** (Q4_K_XL semver, HauhauCS constraint, the two
+  degenerate-loop outputs) are the ones worth an eyeball since they set the ranking.
 
 ## Known failures & data-quality caveats
 
@@ -125,9 +156,9 @@ a little for chat-template/compute buffers, so expect to nudge `QCTX` down a not
     `pkill`-ing stale servers, poll until `:8080` is actually free before binding; and in the readiness
     loop, confirm our own `SRV_PID` is alive **before** trusting a `/health` 200, so a foreign server
     can never masquerade as ready (a bind failure now yields a clean skip, not silent blanks). The
-    empty-content case is also now guarded so a blank can't pose as an answer. **Awaiting a re-run to
-    confirm.** Note the maintainer had already independently added the `pkill` and empty/`reasoning_content`
-    handling; this fix closes the remaining health-check ordering gap.
+    empty-content case is also now guarded so a blank can't pose as an answer. **Confirmed fixed** —
+    `2026-07-03_055350` booted all 10 configs with 0 blank / 0 port-bind. Note the maintainer had already
+    independently added the `pkill` and empty/`reasoning_content` handling; this closed the health-check gap.
   - **Harness hardening (earlier change):** the server log is now per-model
     (`quality/<label>/_server.log`) instead of one clobbered `_server.log`, so a crash for one config
     no longer erases the next's log. `-ngl` is per-config (CONFIGS field 6, default 99 = full offload)
@@ -147,32 +178,30 @@ a little for chat-template/compute buffers, so expect to nudge `QCTX` down a not
        think phase) before a full pass.
     2. **`35B_UD-IQ4_NL_XL` emits degenerate output** (endless `////`, reasoning-only) — see `040949`.
        Already diagnosed and **dropped from `CONFIGS`** by the maintainer (`5763692`).
-  - **Dense `27B_IQ4_XS` can't hold the quality-pass context on 16 GB** (`034918`, `035800`): the server
-    boots but OOMs allocating the KV cache (`failed to allocate buffer for kv cache` / `cudaMalloc failed`),
-    consistent with the throughput finding that IQ4_XS is VRAM-bound. Lower `QCTX` or use a smaller quant
-    (IQ3_M) for its quality pass.
-  - **Only throughput is fully validated; quality is now _unblocked_ but not yet complete.** Once `GEN` is
-    raised, re-run the full matrix for a real cross-model quality comparison.
+  - **The `27B_IQ4_XS` KV-alloc OOMs (`034918`, `035800`) were the stale-server VRAM leak, not a real
+    IQ4_XS limit** — both predate the port-race fix. Post-fix (`055350`) IQ4_XS runs clean at default
+    `QCTX=8192`. See the "Dense quality-pass fit" note above; the per-model KV caps were removed (`0e1c60d`).
+  - **Comprehensive quality pass landed (`2026-07-03_055350`)** — 82/90 real answers, all 10 configs.
+    See the "Quality results" section above. Only remaining gap: 8 GEN=4096 truncations (mostly the MoE
+    and the over-thinking Youssofal merge); a higher-GEN rerun would close them.
 - **Provenance gaps in early runs** (documented in `README.md`): `2026-07-01_202112` predates version
   stamping (CUDA 13.1, footer-appended); `2026-07-02_175923` lost its `json/` to the old flat layout;
   `2026-07-02_221547` and `_223156` have `json/` but no `RUN.md`.
 
 ## Next steps
 
-1. **Run the full quality matrix with enough answer budget.** The pipeline works (`2026-07-03_041809`
-   produced real, correct answers), but the answer limit (`GEN`) truncates these reasoning models
-   mid-think: `GEN=768` left answers blank, and even `GEN=2048` truncated 12 of 18 answers in `041809`
-   (that run used 2048 — the think phase alone exceeds it on debug/refactor/multi-step prompts). The
-   harness default is now `GEN=4096` (fits short prompts + most reasoning within `QCTX=8192`). **For a
-   deep MoE quality pass, drive it wider:**
+1. **Re-run the quality matrix at higher GEN to close the 8 truncations.** The comprehensive pass
+   (`2026-07-03_055350`, GEN=4096) truncated 8 of 90 answers — mostly the two MoE configs and the
+   over-thinking `Heretic_Youssofal` merge, which run out of budget mid-think rather than answering wrong.
+   Re-run with a bigger answer budget so the ranking rests on finished answers (and the MoE gets a fair
+   shot at the coding prompts it currently loses to truncation):
 
    ```bash
-   GEN=8192 QCTX=16384 ./run-quality.sh      # MoE only — big think budget + room in the window
+   GEN=8192 QCTX=16384 ./run-quality.sh      # all configs now fit this; KV caps removed (0e1c60d)
    ```
 
-   Keep `QCTX` modest for the **VRAM-bound dense quants** (`27B_IQ4_XS` OOMs on KV even at 8192 — use a
-   lower `QCTX` or the `IQ3_M` quant for its pass). Also drop the degenerate `35B_UD-IQ4_NL_XL`. Then run
-   all configs × prompts and judge which merge is actually smarter. Biggest open gap until a clean pass lands.
+   Then confirm whether `35B_UD-Q4_K_XL`'s semver crash and `27B_HauhauCS_Balanced`'s stdlib-constraint
+   violation persist with a full budget (those are real faults, not truncations).
 2. **Investigate the `vram=2` hard FAILs** (Q3_K_L dense, 35B Heretic HauhauCS Q4_K_P): confirm the GGUF
    exists/prefetched and the quant is supported by build 9859; re-run or drop from the matrix.
 3. **Push the MoE fit sweep further.** 35B MoE never hit a VRAM wall (fine at 261 k). Extend to
@@ -205,3 +234,5 @@ a little for chat-template/compute buffers, so expect to nudge `QCTX` down a not
 | `2026-07-03_035800` | quality | `27B_IQ4_XS` only; blank — `cudaMalloc` OOM |
 | `2026-07-03_040949` | quality | `35B_UD-IQ4_NL_XL` only; degenerate `////` output (model dropped) |
 | `2026-07-03_041809` | quality | **first real answers** — `35B_UD-Q3_K_M` + `Q4_K_XL`; 6 real, 12 truncated (raise GEN) |
+| `2026-07-03_055350` | quality | **first comprehensive pass** — 10 configs × 9 prompts, 82/90 real; see Quality results |
+| `2026-07-03_113237` | quality | partial re-run — 5 configs (HauhauCS, Youssofal, IQ4_XS + 2 MoE), 32 real |
