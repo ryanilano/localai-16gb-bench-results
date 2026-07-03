@@ -73,6 +73,25 @@ rests on only **2 prompts where both models emitted a final answer** (the rest t
 not a certified tie. Q4_K_XL's higher precision _should_ give it a marginal reasoning edge; reserve judgment
 until a GEN-raised full pass can actually measure it. **For now: Q3_K_M — faster, lighter, no measured quality cost.**
 
+### Dense quality-pass fit (which dense quants can be tested on 16 GB)
+
+The quality server preallocates the **entire `QCTX` KV cache at load** (unlike the throughput bench,
+which grows KV with depth), so a dense quant that "fits 16 k" in the sweep can still OOM as a server. The
+lever is weights-at-load headroom under the **15943 MiB** ceiling (a full `QCTX=8192` KV ≈ **2720 MiB**):
+
+| Dense quant | Weights @load | QCTX=8192 KV fits? | Quality-pass setting |
+| --- | --- | --- | --- |
+| **IQ3_M** (NEO_CODE, Heretic_NEO_CODE) | 12712 | ✅ | default (8192 / q8_0) — safest |
+| **Q3_K_M** (Heretic_Youssofal) | 13102 | ✅ (tight) | default (8192 / q8_0) |
+| **Q3_K_P** (HauhauCS) | 14056 | ⚠️ ~16 000 → OOM | **QCTX 6144** |
+| **IQ4_XS** (all merges) | ~14970 | ❌ | **QCTX 4096 + q4_0 KV** (best-effort; may truncate long answers) |
+
+These are now wired into the harness as `qctx_for_label` / `kv_quant_for_label` lookups in `configs.sh`
+(commit `bf13553`), so a full quality run picks safe values per model automatically. **IQ4_XS dense is a
+poor fit for a reasoning-budget pass regardless** — prefer its IQ3_M sibling for quality and keep IQ4_XS as
+a throughput / short-context (≤16 k) config. Headroom figures are from the text-only sweep; the server adds
+a little for chat-template/compute buffers, so expect to nudge `QCTX` down a notch if a first boot still OOMs.
+
 ## Known failures & data-quality caveats
 
 - **Hard FAILs with `vram_peak = 2 MiB`** (`27B_..._Q3_K_L`, `35B_Heretic_HauhauCS` Q4_K_P): these
