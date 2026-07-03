@@ -1,0 +1,3 @@
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 15943 MiB):
+  Device 0: NVIDIA GeForce RTX 4070 Ti SUPER, compute capability 8.9, VMM: yes, VRAM: 15943 MiB
+llama_bench: error: failed to create context with model '/root/.cache/huggingface/hub/models--DavidAU--Qwen3.6-27B-NEO-CODE-Di-IMatrix-MAX-GGUF/snapshots/d5f5ec17769ea1e8771f9886af11b666dd548561/Qwen3.6-27B-NEO-CODE-2T-OT-IQ4_XS.gguf'
