@@ -1,0 +1,21 @@
+# Benchmark run provenance
+timestamp:            2026-07-03 03:38:04 -0400
+hostname:             debian-llm
+
+## NVIDIA driver / GPU
+gpu (driver,name,vram): No devices were found
+power (limit,max):      No devices were found
+driver userspace:       NVRM version: NVIDIA UNIX x86_64 Kernel Module  595.71.05  Fri Apr 24 06:36:12 UTC 2026
+GCC version:  gcc version 14.2.0 (Debian 14.2.0-19) 
+
+## CUDA toolkit
+nvcc release:           Cuda compilation tools, release 13.3, V13.3.73
+/usr/local/cuda ->:     /usr/local/cuda-13.3
+
+## llama.cpp
+resolved binary:        /root/llama.cpp/build-13.3/bin/llama-bench
+source git commit:      4fc4ec5541b243957ae5099edb67372f8f3b550e
+version output:
+  0.00.009.549 E ggml_cuda_init: failed to initialize CUDA: no CUDA-capable device is detected
+  version: 9859 (4fc4ec554)
+  built with GNU 14.2.0 for Linux x86_64
