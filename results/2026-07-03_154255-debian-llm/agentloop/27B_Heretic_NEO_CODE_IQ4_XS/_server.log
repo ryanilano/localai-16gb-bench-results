@@ -1,0 +1,37 @@
+0.02.016.063 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.02.114.341 I srv    load_model: loading model 'DavidAU/Qwen3.6-27B-Heretic-Uncensored-FINETUNE-NEO-CODE-Di-IMatrix-MAX-GGUF:IQ4_XS'
+0.02.407.768 W common_fit_params: failed to fit params to free device memory: n_gpu_layers already set by user to 99, abort
+0.04.557.733 I srv    load_model: initializing, n_slots = 4, n_ctx_slot = 16384, kv_unified = 'true'
+0.04.571.845 I srv          init: chat template supports preserving reasoning, consider enabling it via --reasoning-preserve
+0.04.571.887 I srv  llama_server: model loaded
+0.04.571.890 I srv  llama_server: listening on http://127.0.0.1:8080
+0.06.078.029 I slot get_availabl: id  3 | task -1 | selected slot by LRU, t_last = -1
+0.06.078.440 I slot launch_slot_: id  3 | task 0 | processing task, is_child = 0
+0.08.603.070 I slot print_timing: id  3 | task 0 | prompt eval time =     528.64 ms /   663 tokens (    0.80 ms per token,  1254.16 tokens per second)
+0.08.603.073 I slot print_timing: id  3 | task 0 |        eval time =    1995.91 ms /    73 tokens (   27.34 ms per token,    36.57 tokens per second)
+0.08.603.074 I slot print_timing: id  3 | task 0 |       total time =    2524.56 ms /   736 tokens
+0.08.603.077 I slot print_timing: id  3 | task 0 |    graphs reused =         72
+0.08.603.137 I slot      release: id  3 | task 0 | stop processing: n_tokens = 735, truncated = 0
+0.08.620.676 I slot get_availabl: id  3 | task -1 | selected slot by LCP similarity, sim_best = 0.709 (> 0.100 thold), f_keep = 0.899
+0.08.620.791 I slot launch_slot_: id  3 | task 77 | processing task, is_child = 0
+0.11.941.915 I slot print_timing: id  3 | task 77 | n_decoded =    110, tg =  36.40 t/s, tg_3s =  36.40 t/s
+0.12.938.196 I slot print_timing: id  3 | task 77 | prompt eval time =     298.86 ms /   364 tokens (    0.82 ms per token,  1217.96 tokens per second)
+0.12.938.199 I slot print_timing: id  3 | task 77 |        eval time =    4018.52 ms /   146 tokens (   27.52 ms per token,    36.33 tokens per second)
+0.12.938.200 I slot print_timing: id  3 | task 77 |       total time =    4317.38 ms /   510 tokens
+0.12.938.200 I slot print_timing: id  3 | task 77 |    graphs reused =        215
+0.12.938.248 I slot      release: id  3 | task 77 | stop processing: n_tokens = 1077, truncated = 0
+0.12.956.297 I slot get_availabl: id  3 | task -1 | selected slot by LCP similarity, sim_best = 0.880 (> 0.100 thold), f_keep = 0.864
+0.12.956.438 I slot launch_slot_: id  3 | task 226 | processing task, is_child = 0
+0.14.631.761 I slot print_timing: id  3 | task 226 | prompt eval time =     287.60 ms /   339 tokens (    0.85 ms per token,  1178.71 tokens per second)
+0.14.631.764 I slot print_timing: id  3 | task 226 |        eval time =    1387.68 ms /    51 tokens (   27.21 ms per token,    36.75 tokens per second)
+0.14.631.765 I slot print_timing: id  3 | task 226 |       total time =    1675.29 ms /   390 tokens
+0.14.631.765 I slot print_timing: id  3 | task 226 |    graphs reused =        264
+0.14.631.809 I slot      release: id  3 | task 226 | stop processing: n_tokens = 1107, truncated = 0
+0.14.742.071 I slot get_availabl: id  3 | task -1 | selected slot by LCP similarity, sim_best = 0.934 (> 0.100 thold), f_keep = 0.953
+0.14.742.248 I slot launch_slot_: id  3 | task 280 | processing task, is_child = 0
+0.15.756.595 I slot print_timing: id  3 | task 280 | prompt eval time =     180.46 ms /    96 tokens (    1.88 ms per token,   531.98 tokens per second)
+0.15.756.598 I slot print_timing: id  3 | task 280 |        eval time =     833.85 ms /    31 tokens (   26.90 ms per token,    37.18 tokens per second)
+0.15.756.598 I slot print_timing: id  3 | task 280 |       total time =    1014.31 ms /   127 tokens
+0.15.756.598 I slot print_timing: id  3 | task 280 |    graphs reused =        293
+0.15.756.645 I slot      release: id  3 | task 280 | stop processing: n_tokens = 1159, truncated = 0
+0.15.804.961 I srv    operator(): operator(): cleaning up before exit...
