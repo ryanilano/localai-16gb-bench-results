@@ -1,0 +1,17 @@
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 15943 MiB):
+  Device 0: NVIDIA GeForce RTX 4070 Ti SUPER, compute capability 8.9, VMM: yes, VRAM: 15943 MiB
+common_download_get_hf_plan: no GGUF files found in repository Youssofal/Qwen3.6-27B-Abliterated-Heretic-Uncensored-GGUF
+Available GGUF files:
+ - Qwen3.6-27B-Abliterated-Heretic-Uncensored-BF16-00001-of-00002.gguf
+ - Qwen3.6-27B-Abliterated-Heretic-Uncensored-BF16-00002-of-00002.gguf
+ - Qwen3.6-27B-Abliterated-Heretic-Uncensored-Q2_K.gguf
+ - Qwen3.6-27B-Abliterated-Heretic-Uncensored-Q3_K_M.gguf
+ - Qwen3.6-27B-Abliterated-Heretic-Uncensored-Q4_K_M.gguf
+ - Qwen3.6-27B-Abliterated-Heretic-Uncensored-Q5_K_M.gguf
+ - Qwen3.6-27B-Abliterated-Heretic-Uncensored-Q6_K.gguf
+ - Qwen3.6-27B-Abliterated-Heretic-Uncensored-Q8_0.gguf
+ - mmproj-BF16.gguf
+ - mmproj-F16.gguf
+ - mmproj-model-bf16.gguf
+ - mmproj-model-f16.gguf
+error: failed to download model from HuggingFace

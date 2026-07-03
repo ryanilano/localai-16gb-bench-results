@@ -1,0 +1,8 @@
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 15943 MiB):
+  Device 0: NVIDIA GeForce RTX 4070 Ti SUPER, compute capability 8.9, VMM: yes, VRAM: 15943 MiB
+| model                          |       size |     params | backend    | ngl |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | --------------: | -------------------: |
+| qwen35moe 35B.A3B IQ4_NL - 4.5 bpw |  18.15 GiB |    34.66 B | CUDA       |   0 |             pp1 |          0.14 ± 0.00 |
+| qwen35moe 35B.A3B IQ4_NL - 4.5 bpw |  18.15 GiB |    34.66 B | CUDA       |   0 |             tg1 |          0.18 ± 0.00 |
+
+build: 4fc4ec554 (9859)
