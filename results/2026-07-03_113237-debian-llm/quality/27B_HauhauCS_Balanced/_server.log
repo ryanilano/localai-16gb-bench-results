@@ -1,0 +1,3 @@
+0.00.309.172 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.424.028 I srv    load_model: loading model 'HauhauCS/Qwen3.6-27B-Uncensored-HauhauCS-Balanced:IQ4_XS'
+0.00.728.985 W common_fit_params: failed to fit params to free device memory: n_gpu_layers already set by user to 99, abort
