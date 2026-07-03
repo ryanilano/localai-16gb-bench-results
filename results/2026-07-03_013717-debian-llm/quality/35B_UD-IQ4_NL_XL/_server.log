@@ -1,0 +1,4 @@
+0.02.015.995 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.02.124.749 E srv         start: couldn't bind HTTP server socket, hostname: 127.0.0.1, port: 8080
+0.02.124.752 I srv    operator(): operator(): cleaning up before exit...
+0.02.124.797 E srv  llama_server: exiting due to HTTP server error
