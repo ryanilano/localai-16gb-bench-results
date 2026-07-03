@@ -1,0 +1,7 @@
+0.00.432.552 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.561.651 I srv    load_model: loading model 'DavidAU/Qwen3.6-27B-NEO-CODE-Di-IMatrix-MAX-GGUF:IQ3_M'
+0.21.619.252 I srv    load_model: initializing, n_slots = 4, n_ctx_slot = 8192, kv_unified = 'true'
+0.21.633.467 I srv          init: chat template supports preserving reasoning, consider enabling it via --reasoning-preserve
+0.21.633.490 I srv  llama_server: model loaded
+0.21.633.494 I srv  llama_server: listening on http://127.0.0.1:8080
+0.37.990.286 I srv    operator(): operator(): cleaning up before exit...
