@@ -1,0 +1,16 @@
+test_basic_get_put (test_lru.TestLRUCache.test_basic_get_put) ... ok
+test_capacity_one (test_lru.TestLRUCache.test_capacity_one) ... ok
+test_eviction_is_least_recently_used (test_lru.TestLRUCache.test_eviction_is_least_recently_used) ... ok
+test_get_updates_recency (test_lru.TestLRUCache.test_get_updates_recency) ... ok
+test_len_tracks_size (test_lru.TestLRUCache.test_len_tracks_size) ... ok
+test_missing_key_returns_none (test_lru.TestLRUCache.test_missing_key_returns_none) ... ok
+test_peek_does_not_update_recency (test_lru.TestLRUCache.test_peek_does_not_update_recency) ... ok
+test_peek_missing_returns_none (test_lru.TestLRUCache.test_peek_missing_returns_none) ... ok
+test_peek_returns_value (test_lru.TestLRUCache.test_peek_returns_value) ... ok
+test_put_refreshes_recency (test_lru.TestLRUCache.test_put_refreshes_recency) ... ok
+test_update_existing_value (test_lru.TestLRUCache.test_update_existing_value) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.000s
+
+OK

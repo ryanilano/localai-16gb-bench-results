@@ -1,0 +1,25 @@
+0.01.110.811 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.01.298.679 I srv    load_model: loading model 'DavidAU/Qwen3.6-27B-Heretic-Uncensored-FINETUNE-NEO-CODE-Di-IMatrix-MAX-GGUF:IQ3_M'
+0.10.415.302 I srv    load_model: initializing, n_slots = 4, n_ctx_slot = 8192, kv_unified = 'true'
+0.10.429.556 I srv          init: chat template supports preserving reasoning, consider enabling it via --reasoning-preserve
+0.10.429.579 I srv  llama_server: model loaded
+0.10.429.582 I srv  llama_server: listening on http://127.0.0.1:8080
+0.12.028.664 I slot get_availabl: id  3 | task -1 | selected slot by LRU, t_last = -1
+0.12.028.726 I slot launch_slot_: id  3 | task 0 | processing task, is_child = 0
+0.15.373.051 I slot print_timing: id  3 | task 0 | n_decoded =    124, tg =  41.07 t/s, tg_3s =  41.07 t/s
+0.18.391.720 I slot print_timing: id  3 | task 0 | n_decoded =    247, tg =  40.91 t/s, tg_3s =  40.75 t/s
+0.21.410.552 I slot print_timing: id  3 | task 0 | n_decoded =    370, tg =  40.85 t/s, tg_3s =  40.74 t/s
+0.24.430.574 I slot print_timing: id  3 | task 0 | n_decoded =    493, tg =  40.82 t/s, tg_3s =  40.73 t/s
+0.27.433.223 I slot print_timing: id  3 | task 0 | n_decoded =    615, tg =  40.78 t/s, tg_3s =  40.63 t/s
+0.30.456.653 I slot print_timing: id  3 | task 0 | n_decoded =    738, tg =  40.77 t/s, tg_3s =  40.68 t/s
+0.33.463.312 I slot print_timing: id  3 | task 0 | n_decoded =    860, tg =  40.74 t/s, tg_3s =  40.58 t/s
+0.36.466.289 I slot print_timing: id  3 | task 0 | n_decoded =    982, tg =  40.73 t/s, tg_3s =  40.63 t/s
+0.39.481.526 I slot print_timing: id  3 | task 0 | n_decoded =   1104, tg =  40.70 t/s, tg_3s =  40.46 t/s
+0.42.494.987 I slot print_timing: id  3 | task 0 | n_decoded =   1226, tg =  40.68 t/s, tg_3s =  40.49 t/s
+0.45.514.731 I slot print_timing: id  3 | task 0 | n_decoded =   1348, tg =  40.65 t/s, tg_3s =  40.40 t/s
+0.48.308.464 I slot print_timing: id  3 | task 0 | prompt eval time =     325.22 ms /   272 tokens (    1.20 ms per token,   836.36 tokens per second)
+0.48.308.468 I slot print_timing: id  3 | task 0 |        eval time =   35954.48 ms /  1461 tokens (   24.61 ms per token,    40.63 tokens per second)
+0.48.308.468 I slot print_timing: id  3 | task 0 |       total time =   36279.70 ms /  1733 tokens
+0.48.308.472 I slot print_timing: id  3 | task 0 |    graphs reused =       1455
+0.48.308.505 I slot      release: id  3 | task 0 | stop processing: n_tokens = 1732, truncated = 0
+0.48.407.122 I srv    operator(): operator(): cleaning up before exit...
