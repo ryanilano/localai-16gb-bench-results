@@ -1,0 +1,30 @@
+0.00.950.313 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.01.050.723 I srv    load_model: loading model 'DavidAU/Qwen3.6-27B-Heretic-Uncensored-FINETUNE-NEO-CODE-Di-IMatrix-MAX-GGUF:IQ4_XS'
+0.01.340.265 W common_fit_params: failed to fit params to free device memory: n_gpu_layers already set by user to 99, abort
+0.12.441.503 I srv    load_model: initializing, n_slots = 4, n_ctx_slot = 8192, kv_unified = 'true'
+0.12.455.492 I srv          init: chat template supports preserving reasoning, consider enabling it via --reasoning-preserve
+0.12.455.514 I srv  llama_server: model loaded
+0.12.455.517 I srv  llama_server: listening on http://127.0.0.1:8080
+0.14.381.698 I slot get_availabl: id  3 | task -1 | selected slot by LRU, t_last = -1
+0.14.381.751 I slot launch_slot_: id  3 | task 0 | processing task, is_child = 0
+0.17.727.502 I slot print_timing: id  3 | task 0 | n_decoded =    110, tg =  36.42 t/s, tg_3s =  36.42 t/s
+0.20.748.157 I slot print_timing: id  3 | task 0 | n_decoded =    219, tg =  36.25 t/s, tg_3s =  36.08 t/s
+0.23.760.293 I slot print_timing: id  3 | task 0 | n_decoded =    325, tg =  35.90 t/s, tg_3s =  35.19 t/s
+0.26.775.458 I slot print_timing: id  3 | task 0 | n_decoded =    433, tg =  35.88 t/s, tg_3s =  35.82 t/s
+0.29.800.257 I slot print_timing: id  3 | task 0 | n_decoded =    540, tg =  35.78 t/s, tg_3s =  35.37 t/s
+0.32.800.926 I slot print_timing: id  3 | task 0 | n_decoded =    648, tg =  35.81 t/s, tg_3s =  35.99 t/s
+0.35.825.473 I slot print_timing: id  3 | task 0 | n_decoded =    757, tg =  35.85 t/s, tg_3s =  36.04 t/s
+0.38.828.171 I slot print_timing: id  3 | task 0 | n_decoded =    865, tg =  35.86 t/s, tg_3s =  35.97 t/s
+0.41.830.613 I slot print_timing: id  3 | task 0 | n_decoded =    973, tg =  35.87 t/s, tg_3s =  35.97 t/s
+0.44.854.282 I slot print_timing: id  3 | task 0 | n_decoded =   1080, tg =  35.82 t/s, tg_3s =  35.39 t/s
+0.47.856.033 I slot print_timing: id  3 | task 0 | n_decoded =   1188, tg =  35.84 t/s, tg_3s =  35.98 t/s
+0.50.862.468 I slot print_timing: id  3 | task 0 | n_decoded =   1296, tg =  35.85 t/s, tg_3s =  35.92 t/s
+0.53.865.808 I slot print_timing: id  3 | task 0 | n_decoded =   1402, tg =  35.80 t/s, tg_3s =  35.29 t/s
+0.56.877.408 I slot print_timing: id  3 | task 0 | n_decoded =   1510, tg =  35.81 t/s, tg_3s =  35.86 t/s
+0.59.899.943 I slot print_timing: id  3 | task 0 | n_decoded =   1618, tg =  35.80 t/s, tg_3s =  35.73 t/s
+1.02.240.719 I slot print_timing: id  3 | task 0 | prompt eval time =     325.59 ms /   272 tokens (    1.20 ms per token,   835.41 tokens per second)
+1.02.240.723 I slot print_timing: id  3 | task 0 |        eval time =   47533.34 ms /  1702 tokens (   27.93 ms per token,    35.81 tokens per second)
+1.02.240.723 I slot print_timing: id  3 | task 0 |       total time =   47858.93 ms /  1974 tokens
+1.02.240.726 I slot print_timing: id  3 | task 0 |    graphs reused =       1695
+1.02.240.759 I slot      release: id  3 | task 0 | stop processing: n_tokens = 1973, truncated = 0
+1.02.344.851 I srv    operator(): operator(): cleaning up before exit...
